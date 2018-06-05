@@ -1,0 +1,2 @@
+# AmazonCloudFormations
+YAML for ams
