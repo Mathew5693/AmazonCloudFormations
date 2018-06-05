@@ -1,0 +1,59 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creates an Amazon Linux Webserver
+
+Parameters:
+  KeyName:
+    Description: Name of existing EC2 KeyPair to enable SSH Access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+ SSHLocation:
+   Description: ' The IP Address range that can be used to SSH to the EC2 Instance'
+   Type: String
+   MinLength: '9'
+   MaxLength: '18'
+   Default: 
+   AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+   ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+   
+Resources:
+  EC2Instance:
+   Type: AWS::EC2::Instnace
+   Properties:
+     ImageID: ami-10547475
+     Instance: t2.micro
+     SecurityGroups:
+     - !Ref WebserverSecurityGroup
+     Tags:
+     -Key: Name
+      Value: CloudFormation
+     Keyname: !Ref KeyName
+     UserData:
+       'FN::Base64': !Sub | 
+         #!/bin/bash -x
+         set -e
+         set -x
+         sudo timedatectl set-timezone America/New_York
+         sumo apt-get update
+         sudo apt-get install -y apache2
+         cd var/www/html
+         echo "<h1>Mathew Apanovich</h1><p>The Title of the Page</p>"
+         >index.html
+  WebserverSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription:
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+      FromPort: 80
+      IpProtocol: tcp
+      ToPort: 80
+      - CidrIp: !Ref SSHLocation
+      FromPort:
+      IpProtocol: TCP
+      ToPort: 
+Outputs:
+  HellowWorldURL: 
+    Description: URL Pointing at our page
+    Value: !Sub 'http://${EC2Instance.PublixIp}'
+    
